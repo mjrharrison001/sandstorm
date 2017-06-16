@@ -13,7 +13,7 @@ var nonce = 1;
 
 router.get('/', function(req, res, next){
 
-  PythonShell.run('scripts/my_script.py', function (err) {
+  PythonShell.run('scripts/python_script.py', function (err) {
     if (err) throw err;
     console.log('finished');
     res.send("test");
