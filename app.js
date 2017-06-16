@@ -6,7 +6,10 @@ var cookieParser    = require('cookie-parser');
 var bodyParser      = require('body-parser');
 var mongoose        = require('mongoose');
 
-var appRoutes       = require('./routes/app');
+var appRoutes             = require('./routes/app');
+var poloniexRoutes        = require('./routes/poloniex');
+var poloniexMarketRoutes  = require('./routes/poloniexmarket');
+var bittrexRoutes         = require('./routes/bittrex');
 
 var app = express();
 
@@ -41,6 +44,9 @@ app.use(function (req, res, next) {
     next();
 });
 
+app.use('/poloniex/market', poloniexMarketRoutes);
+app.use('/poloniex', poloniexRoutes);
+app.use('/bittrex', bittrexRoutes);
 app.use('/', appRoutes);
 
 // catch 404 and forward to error handler
