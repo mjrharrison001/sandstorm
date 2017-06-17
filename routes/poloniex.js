@@ -9,28 +9,28 @@ const api_secret = 'dac42583fb807bd4d01870c152333ccf4762b5a260ba596cf70abf3b726c
 const trading_url = 'https://poloniex.com/tradingApi';
 const public_url = 'https://poloniex.com/public';
 
-var nonce = 1;
-
 router.get('/', function(req, res, next){
-  var sign = [
-    {command: 'returnBalances'},
-    {nonce: nonce}
-  ];
+  // Nonce needs to increase on every request, so just use a unix timestamp
+  var nonce = Math.round((new Date()).getTime() / 1000);
 
-  encrypted_sign = encrypt(JSON.stringify(api_secret), sign);
+  // Using a predefined body string instead of the body param of our options object
+  // because annoyingly the poloniex API is sensitive to the parameter order
+  var body_string = 'nonce=' + nonce + '&command=returnBalances';
+
+  var encrypted_sign = sign(api_secret, body_string);
   //TODO are we even encrypting properly? 
-  console.log(sign);
   console.log(encrypted_sign);
+  console.log(body_string);
 
   var options = {
     method: 'POST',
     jar : true,
-    json: true,
     url: trading_url,
-    form: {command: 'returnBalances'}
+    body: body_string,
     headers: {
       'Key': api_key,
-      'Sign': encrypted_sign
+      'Sign': encrypted_sign,
+      'Content-Type': 'application/x-www-form-urlencoded'
     }
   }
   request(options, function (err, response, bodyD) {
@@ -38,8 +38,17 @@ router.get('/', function(req, res, next){
       console.error('error posting json: ', err);
       return res.send('problem with POST request');
     }
-    console.log(bodyD);
-    res.send("worked!")
+    
+    var response_body = JSON.parse(bodyD);
+    console.log(response_body);
+
+    // Why do they return a 200 even on error?
+    // Who knows!
+    if (response_body.hasOwnProperty('error')) {
+      res.send(bodyD);
+    } else {
+      res.send("worked!");
+    }
   });
 });
 
@@ -50,9 +59,9 @@ router.get('/close', function(req, res, next){
 
 module.exports = router;
 
-function encrypt(key, str) {
+function sign(key, str) {
     var hmac = crypto.createHmac("sha512", key);
-    var signed = hmac.update(new Buffer(str, 'utf-8')).digest("base64");
+    var signed = hmac.update(str).digest("hex");
     return signed
 }
 
